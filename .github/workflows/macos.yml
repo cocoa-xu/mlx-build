@@ -12,6 +12,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   macos:
@@ -97,6 +99,13 @@ jobs:
           cd "${ROOTDIR}/artifact"
           tar -C "${DESTDIR}" -czf "${ROOTDIR}/artifact/mlx-${{ matrix.job.target }}.tar.gz" .
           shasum -a 256 mlx-${{ matrix.job.target }}.tar.gz | tee mlx-${{ matrix.job.target }}.tar.gz.sha256
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            'artifact/*.tar.gz'
+            'artifact/*.sha256'
 
       - uses: softprops/action-gh-release@v2
         if: steps.build-check.outputs.build == 'true'
