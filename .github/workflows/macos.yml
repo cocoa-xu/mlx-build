@@ -96,8 +96,7 @@ jobs:
           cmake --build build --config Release -j$(sysctl -n hw.ncpu)
           cmake --install build --config Release
 
-          cd "${ROOTDIR}/artifact"
-          tar -C "${DESTDIR}" -czf "${ROOTDIR}/artifact/mlx-${{ matrix.job.target }}.tar.gz" .
+          tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/mlx-${{ matrix.job.target }}.tar.gz" .
           shasum -a 256 mlx-${{ matrix.job.target }}.tar.gz | tee mlx-${{ matrix.job.target }}.tar.gz.sha256
 
       - name: Attest
