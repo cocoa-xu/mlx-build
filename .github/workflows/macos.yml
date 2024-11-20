@@ -104,8 +104,8 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: |
-            'artifact/*.tar.gz'
-            'artifact/*.sha256'
+            artifact/*.tar.gz
+            artifact/*.sha256
 
       - uses: softprops/action-gh-release@v2
         if: steps.build-check.outputs.build == 'true'
