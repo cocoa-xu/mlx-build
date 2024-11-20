@@ -1,0 +1,108 @@
+name: macos
+
+on:
+  workflow_dispatch:
+    inputs:
+      mlx_verison:
+        description: 'MLX Version (X.Y.Z)'
+        required: true
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: ${{ matrix.job.runs-on }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.mlx_verison }}-${{ matrix.job.target }}
+      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        job: 
+          - { target: "arm64-apple-darwin", runs-on: "macos-14" }
+
+    name: ${{ matrix.job.target }}
+
+    steps:
+      - name: Build Check
+        id: build-check
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            export MLX_VERSION_V=${GITHUB_REF##*/v}
+          else
+            export MLX_VERSION_V=${{ inputs.mlx_verison }}
+          fi
+          export MLX_VERSION="${MLX_VERSION_V#v}"
+
+          echo "build=true" >> $GITHUB_OUTPUT
+          echo "version=${MLX_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        if: steps.build-check.outputs.build == 'true'
+        uses: actions/checkout@v4
+
+      - name: Cache MLX Source Code
+        if: steps.build-check.outputs.build == 'true'
+        id: cache-otp
+        uses: actions/cache@v4
+        with:
+          key: mlx-${{ steps.build-check.outputs.version }}
+          path: |
+            ./mlx-v${{ steps.build-check.outputs.version }}.tar.gz
+
+      - name: Download MLX Source Code
+        if: steps.build-check.outputs.build == 'true' && steps.cache-otp.outputs.cache-hit != 'true'
+        run: |
+          export MLX_VERSION=${{ steps.build-check.outputs.version }}
+          export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
+          curl -fSL "https://github.com/ml-explore/mlx/archive/refs/tags/v${MLX_VERSION}.tar.gz" -o "${MLX_SRC_FILENAME}"
+
+      - name: Compile MLX
+        if: steps.build-check.outputs.build == 'true'
+        id: target
+        run: |
+          export MLX_VERSION=${{ steps.build-check.outputs.version }}
+          export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
+
+          export ROOTDIR="$(pwd)"
+          export MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
+          export DESTDIR="${ROOTDIR}/artifact/mlx"
+
+          rm -rf "${MLX_SRC_DIR}"
+          mkdir -p "${MLX_SRC_DIR}"
+          rm -rf "${DESTDIR}"
+          mkdir -p "${DESTDIR}"
+          rm -rf "${ROOTDIR}/build"
+          mkdir -p "${ROOTDIR}/build"
+
+          tar -xzf "${MLX_SRC_FILENAME}"
+          cd "${MLX_SRC_DIR}"
+
+          cmake -B build \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D MLX_BUILD_TESTS=OFF \
+            -D MLX_BUILD_EXAMPLES=OFF \
+            -D MLX_BUILD_BENCHMARKS=OFF \
+            -D MLX_BUILD_PYTHON_BINDINGS=OFF \
+            -D MLX_METAL_DEBUG=OFF \
+            -D BUILD_SHARED_LIBS=ON \
+            .
+          cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+          cmake --install build --config Release
+
+          cd "${ROOTDIR}/artifact"
+          tar -C "${DESTDIR}" -czf "${ROOTDIR}/artifact/mlx-${{ matrix.job.target }}.tar.gz" .
+          shasum -a 256 mlx-${{ matrix.job.target }}.tar.gz | tee mlx-${{ matrix.job.target }}.tar.gz.sha256
+
+      - uses: softprops/action-gh-release@v2
+        if: steps.build-check.outputs.build == 'true'
+        with:
+          tag_name: v${{ steps.build-check.outputs.version }}
+          name: v${{ steps.build-check.outputs.version }}
+          files: |
+            artifact/*.tar.gz
+            artifact/*.sha256
