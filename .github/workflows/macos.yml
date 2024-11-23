@@ -30,7 +30,7 @@ jobs:
           - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "ON", variant: "debug-jit" }
           - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "OFF", variant: "debug" }
 
-    name: ${{ matrix.job.target }} / JIT ${{ matrix.job.variant }}
+    name: ${{ matrix.job.target }} / ${{ matrix.job.variant }}
 
     steps:
       - name: Build Check
