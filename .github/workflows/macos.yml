@@ -19,13 +19,14 @@ jobs:
   macos:
     runs-on: ${{ matrix.job.runs-on }}
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.mlx_verison }}-${{ matrix.job.target }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.mlx_verison }}-${{ matrix.job.target }}-${{ matrix.job.variant }}
       cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
         job: 
-          - { target: "arm64-apple-darwin", runs-on: "macos-14" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-14", jit: "ON", variant: "jit" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-14", jit: "OFF", variant: "" }
 
     name: ${{ matrix.job.target }}
 
@@ -91,15 +92,22 @@ jobs:
             -D MLX_BUILD_BENCHMARKS=OFF \
             -D MLX_BUILD_PYTHON_BINDINGS=OFF \
             -D MLX_METAL_DEBUG=OFF \
+            -D MLX_METAL_JIT=${{ matrix.job.jit }} \
             -D BUILD_SHARED_LIBS=ON \
             .
+
           cmake --build build --config Release -j$(sysctl -n hw.ncpu)
           cmake --install build --config Release
 
-          tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/mlx-${{ matrix.job.target }}.tar.gz" .
+          if [ -z "${{ matrix.job.variant }}" ]; then
+            export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}.tar.gz"
+          else
+            export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}-${{ matrix.job.variant }}.tar.gz"
+          fi
+          tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
 
           cd "${ROOTDIR}/artifact"
-          shasum -a 256 mlx-${{ matrix.job.target }}.tar.gz | tee mlx-${{ matrix.job.target }}.tar.gz.sha256
+          shasum -a 256 "${ARCHIVE_FILENAME}" | tee "${ARCHIVE_FILENAME}.sha256"
 
       - name: Attest
         uses: actions/attest-build-provenance@v1
