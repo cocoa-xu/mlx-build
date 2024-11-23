@@ -28,7 +28,7 @@ jobs:
           - { target: "arm64-apple-darwin", runs-on: "macos-14", jit: "ON", variant: "jit" }
           - { target: "arm64-apple-darwin", runs-on: "macos-14", jit: "OFF", variant: "" }
 
-    name: ${{ matrix.job.target }}
+    name: ${{ matrix.job.target }} / JIT ${{ matrix.job.variant }}
 
     steps:
       - name: Build Check
