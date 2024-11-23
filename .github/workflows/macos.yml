@@ -25,8 +25,10 @@ jobs:
       fail-fast: false
       matrix:
         job: 
-          - { target: "arm64-apple-darwin", runs-on: "macos-14", jit: "ON", variant: "jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-14", jit: "OFF", variant: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "OFF", jit: "ON", variant: "jit" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "OFF", jit: "OFF", variant: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "ON", variant: "debug-jit" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "OFF", variant: "debug" }
 
     name: ${{ matrix.job.target }} / JIT ${{ matrix.job.variant }}
 
@@ -85,19 +87,25 @@ jobs:
           tar -xzf "${MLX_SRC_FILENAME}"
           cd "${MLX_SRC_DIR}"
 
+          if [ "${{ matrix.job.debug }}" = "ON" ]; then
+            export CMAKE_BUILD_TYPE=Debug
+          else
+            export CMAKE_BUILD_TYPE=Release
+          fi
+
           cmake -B build \
-            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
             -D MLX_BUILD_TESTS=OFF \
             -D MLX_BUILD_EXAMPLES=OFF \
             -D MLX_BUILD_BENCHMARKS=OFF \
             -D MLX_BUILD_PYTHON_BINDINGS=OFF \
-            -D MLX_METAL_DEBUG=OFF \
+            -D MLX_METAL_DEBUG=${{ matrix.job.debug }} \
             -D MLX_METAL_JIT=${{ matrix.job.jit }} \
             -D BUILD_SHARED_LIBS=ON \
             .
 
-          cmake --build build --config Release -j$(sysctl -n hw.ncpu)
-          cmake --install build --config Release
+          cmake --build build --config "${CMAKE_BUILD_TYPE}" -j$(sysctl -n hw.ncpu)
+          cmake --install build --config "${CMAKE_BUILD_TYPE}"
 
           if [ -z "${{ matrix.job.variant }}" ]; then
             export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}.tar.gz"
