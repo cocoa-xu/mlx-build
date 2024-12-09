@@ -29,6 +29,10 @@ jobs:
           - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "OFF", jit: "OFF", variant: "" }
           - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "ON", variant: "debug-jit" }
           - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "OFF", variant: "debug" }
+          - { target: "x86_64-apple-darwin", runs-on: "macos-13", debug: "OFF", jit: "ON", variant: "jit" }
+          - { target: "x86_64-apple-darwin", runs-on: "macos-13", debug: "OFF", jit: "OFF", variant: "" }
+          - { target: "x86_64-apple-darwin", runs-on: "macos-13", debug: "ON", jit: "ON", variant: "debug-jit" }
+          - { target: "x86_64-apple-darwin", runs-on: "macos-13", debug: "ON", jit: "OFF", variant: "debug" }
 
     name: ${{ matrix.job.target }} / ${{ matrix.job.variant }}
 
@@ -93,12 +97,19 @@ jobs:
             export CMAKE_BUILD_TYPE=Release
           fi
 
+          if [ "${{ matrix.job.target }}" = "x86_64-apple-darwin" ]; then
+            export MLX_ENABLE_X64_MAC=ON
+          else
+            export MLX_ENABLE_X64_MAC=OFF
+          fi
+
           cmake -B build \
             -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
             -D MLX_BUILD_TESTS=OFF \
             -D MLX_BUILD_EXAMPLES=OFF \
             -D MLX_BUILD_BENCHMARKS=OFF \
             -D MLX_BUILD_PYTHON_BINDINGS=OFF \
+            -D MLX_ENABLE_X64_MAC=${MLX_ENABLE_X64_MAC} \
             -D MLX_METAL_DEBUG=${{ matrix.job.debug }} \
             -D MLX_METAL_JIT=${{ matrix.job.jit }} \
             -D BUILD_SHARED_LIBS=ON \
