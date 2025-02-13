@@ -14,8 +14,9 @@ mkdir -p "${DESTDIR}"
 
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get update
-apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config git
+export SUDO="$(which sudo)"
+${SUDO} apt-get update
+${SUDO} apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config git
 
 cd "${ROOTDIR}"
 if [ ! -f "${MLX_SRC_FILENAME}" ]; then
