@@ -73,7 +73,7 @@ jobs:
   linux-glibc:
     runs-on: ubuntu-latest
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.job.target }}-${{ inputs.verison }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.job.target }}-${{ inputs.verison }}-${{ matrix.job.debug }}
       cancel-in-progress: true
     strategy:
       fail-fast: false
@@ -81,8 +81,8 @@ jobs:
         job:
           - { target: "x86_64-linux-gnu", arch: "x86_64", image: "manylinux", platform: "linux/amd64", debug: "OFF" }
           - { target: "x86_64-linux-gnu", arch: "x86_64", image: "manylinux", platform: "linux/amd64", debug: "ON" }
-          - { target: "i686-linux-gnu", arch: "i686", image: "manylinux", platform: "linux/386", debug: "OFF" }
-          - { target: "i686-linux-gnu", arch: "i686", image: "manylinux", platform: "linux/386", debug: "ON" }
+          - { target: "i686-linux-gnu", arch: "i686", image: "quay.io/pypa/manylinux2014_i686", platform: "linux/386", debug: "OFF" }
+          - { target: "i686-linux-gnu", arch: "i686", image: "quay.io/pypa/manylinux2014_i686", platform: "linux/386", debug: "ON" }
           - { target: "aarch64-linux-gnu", arch: "aarch64", image: "manylinux", platform: "linux/aarch64", debug: "OFF" }
           - { target: "aarch64-linux-gnu", arch: "aarch64", image: "manylinux", platform: "linux/aarch64", debug: "ON" }
           - { target: "armv7l-linux-gnueabihf", arch: "armv7l", image: "ubuntu:20.04", platform: "linux/arm/v7", debug: "OFF" }

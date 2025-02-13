@@ -50,7 +50,7 @@ cmake -B build \
   -D MLX_BUILD_EXAMPLES=OFF \
   -D MLX_BUILD_BENCHMARKS=OFF \
   -D MLX_BUILD_PYTHON_BINDINGS=OFF \
-  -D MLX_METAL_DEBUG="${MLX_DEBUG}" \
+  -D MLX_BUILD_BLAS_FROM_SOURCE="ON" \
   -D BUILD_SHARED_LIBS=ON \
   .
 cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
