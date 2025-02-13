@@ -15,14 +15,17 @@ mkdir -p "${DESTDIR}"
 case $TRIPLET in
   riscv64-linux-gnu )
     apt-get update && \
-    apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config liblapacke-dev libopenblas64-openmp-dev 
+    apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config
     ;;
   armv7l-linux-gnueabihf )
     apt-get update && \
-    apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config liblapacke-dev libopenblas64-openmp-dev
+    apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config
+    ;;
+  i686-linux-gnu )
+    yum install -y curl make cmake automake autoconf pkgconfig
     ;;
   *-linux-gnu )
-    yum install -y curl make cmake automake autoconf pkg-config lapack-devel openblas-devel
+    yum install -y curl make cmake automake autoconf pkg-config
     ;;
   * )
     echo "Unknown triplet: ${TRIPLET}"
