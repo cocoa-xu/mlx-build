@@ -203,6 +203,7 @@ jobs:
 
       - name: Attest
         uses: actions/attest-build-provenance@v1
+        if: steps.build-check.outputs.build == 'true'
         with:
           subject-path: |
             artifact/*.tar.gz
