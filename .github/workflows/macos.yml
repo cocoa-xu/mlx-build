@@ -56,7 +56,7 @@ jobs:
 
       - name: Cache MLX Source Code
         if: steps.build-check.outputs.build == 'true'
-        id: cache-otp
+        id: cache-src
         uses: actions/cache@v4
         with:
           key: mlx-${{ steps.build-check.outputs.version }}
@@ -64,7 +64,7 @@ jobs:
             ./mlx-v${{ steps.build-check.outputs.version }}.tar.gz
 
       - name: Download MLX Source Code
-        if: steps.build-check.outputs.build == 'true' && steps.cache-otp.outputs.cache-hit != 'true'
+        if: steps.build-check.outputs.build == 'true' && steps.cache-src.outputs.cache-hit != 'true'
         run: |
           export MLX_VERSION=${{ steps.build-check.outputs.version }}
           export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
