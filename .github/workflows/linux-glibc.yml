@@ -46,14 +46,14 @@ on:
         options:
           - true
           - false
-      build_ppc64le:
-        description: 'Build ppc64le'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+      # build_ppc64le:
+      #   description: 'Build ppc64le'
+      #   required: false
+      #   default: 'true'
+      #   type: choice
+      #   options:
+      #     - true
+      #     - false
       build_s390x:
         description: 'Build s390x'
         required: false
@@ -87,8 +87,8 @@ jobs:
           - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "ON" }
           - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "OFF" }
           - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "ON" }
-          - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "OFF" }
-          - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "ON" }
+          # - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "OFF" }
+          # - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "ON" }
           - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "OFF" }
           - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "ON" }
 
@@ -120,10 +120,6 @@ jobs:
 
             if [ "${{ matrix.job.target }}" == "riscv64-linux-gnu" ]; then
               echo "build=${{ inputs.build_riscv64 }}" >> $GITHUB_OUTPUT
-            fi
-
-            if [ "${{ matrix.job.target }}" == "ppc64le-linux-gnu" ]; then
-              echo "build=${{ inputs.build_ppc64le }}" >> $GITHUB_OUTPUT
             fi
 
             if [ "${{ matrix.job.target }}" == "s390x-linux-gnu" ]; then
