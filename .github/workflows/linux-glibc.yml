@@ -76,7 +76,7 @@ jobs:
     runs-on: ${{ matrix.job.runs-on }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.job.target }}-${{ inputs.verison }}-${{ matrix.job.debug }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
