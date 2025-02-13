@@ -192,7 +192,7 @@ jobs:
           if [ ! -z "${{ steps.build-check.outputs.image }}" ]; then
             bash ./script-to-build-gnu.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ steps.build-check.outputs.image }}" "${{ matrix.job.platform }}"
           else
-            bash ./do-build.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ matrix.job.arch }}-linux-gnu"
+            bash ./do-build.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ matrix.job.arch }}-linux-gnu" "${ROOTDIR}"
           fi
 
       - name: Upload binaries

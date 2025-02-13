@@ -6,8 +6,8 @@ MLX_VERSION=$1
 MLX_DEBUG=$2
 ARCH=$3
 TRIPLET=$4
+ROOTDIR=$5
 MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
-ROOTDIR="/work"
 MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
 export DESTDIR="${ROOTDIR}/artifact/mlx"
 mkdir -p "${DESTDIR}"
