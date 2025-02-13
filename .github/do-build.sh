@@ -46,6 +46,8 @@ cmake -B build \
 cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
 cd build
 make DESTDIR="${DESTDIR}" install
+cd _deps/openblas-build
+make DESTDIR="${DESTDIR}" install
 ls -lah "${DESTDIR}/usr/local/lib"
 tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
 

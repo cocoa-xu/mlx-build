@@ -128,25 +128,16 @@ jobs:
             echo "image=${{ matrix.job.image }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Restore Source Code
+      - name: Checkout
         if: steps.build-check.outputs.build == 'true'
-        id: cache-src
-        uses: actions/cache@v4
-        with:
-          key: src-${{ steps.build-check.outputs.version }}
-          path: |
-            ./mlx-v${{ steps.build-check.outputs.version }}.tar.gz
+        uses: actions/checkout@v4
 
       - name: Get source code
-        if: steps.build-check.outputs.build == 'true' && steps.cache-src.outputs.cache-hit != 'true'
+        if: steps.build-check.outputs.build == 'true'
         run: |
           export MLX_VERSION=${{ steps.build-check.outputs.version }}
           export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
           curl -fSL "https://github.com/ml-explore/mlx/archive/refs/tags/v${MLX_VERSION}.tar.gz" -o "${MLX_SRC_FILENAME}"
-
-      - name: Checkout
-        if: steps.build-check.outputs.build == 'true'
-        uses: actions/checkout@v4
 
       - name: Pull docker image
         if: steps.build-check.outputs.build == 'true'
