@@ -44,9 +44,9 @@ cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
 cmake --install build --config "${CMAKE_BUILD_TYPE}"
 
 if [ "${MLX_DEBUG}" = "ON" ]; then
-  export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}.tar.gz"
+  export ARCHIVE_FILENAME="mlx-${TRIPLET}.tar.gz"
 else
-  export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}-debug.tar.gz"
+  export ARCHIVE_FILENAME="mlx-${TRIPLET}-debug.tar.gz"
 fi
 tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
 
