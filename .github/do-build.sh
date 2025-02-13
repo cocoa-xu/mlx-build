@@ -12,6 +12,8 @@ MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
 DESTDIR="${ROOTDIR}/artifact/mlx"
 mkdir -p "${DESTDIR}"
 
+export DEBIAN_FRONTEND=noninteractive
+
 case $TRIPLET in
   riscv64-linux-gnu )
     apt-get update && \
