@@ -9,7 +9,7 @@ TRIPLET=$4
 MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
 ROOTDIR="/work"
 MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
-DESTDIR="${ROOTDIR}/artifact/mlx"
+export DESTDIR="${ROOTDIR}/artifact/mlx"
 mkdir -p "${DESTDIR}"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -41,7 +41,8 @@ cmake -B build \
   -D BUILD_SHARED_LIBS=ON \
   .
 cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
-cmake --install build --config "${CMAKE_BUILD_TYPE}"
+cd build
+make DESTDIR="${DESTDIR}" install
 
 if [ "${MLX_DEBUG}" = "ON" ]; then
   export ARCHIVE_FILENAME="mlx-${TRIPLET}.tar.gz"

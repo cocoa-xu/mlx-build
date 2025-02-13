@@ -82,7 +82,7 @@ jobs:
           - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/amd64", debug: "OFF" }
           - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/amd64", debug: "ON" }
           - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/aarch64", debug: "OFF" }
-          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/aarch64", debug: "ON" }
+          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, platform: "linux/aarch64", debug: "ON" }
           - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "OFF" }
           - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "ON" }
           - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "OFF" }
@@ -165,12 +165,14 @@ jobs:
       - name: Pull docker image
         if: steps.build-check.outputs.build == 'true'
         run: |
-          sudo docker pull --platform="${{ matrix.job.platform }}" "${{ steps.build-check.outputs.image }}"
-          if [ "${{ matrix.job.arch }}" != "$(uname -m)" ]; then
-            sudo apt-get update
-            sudo apt-get install -y binfmt-support qemu-user-static
+          if [ ! -z "${{ steps.build-check.outputs.image }}" ]; then
+            sudo docker pull --platform="${{ matrix.job.platform }}" "${{ steps.build-check.outputs.image }}"
+            if [ "${{ matrix.job.arch }}" != "$(uname -m)" ]; then
+              sudo apt-get update
+              sudo apt-get install -y binfmt-support qemu-user-static
+            fi
+            sudo docker image ls "${{ steps.build-check.outputs.image }}"
           fi
-          sudo docker image ls "${{ steps.build-check.outputs.image }}"
 
       - name: Compile
         if: steps.build-check.outputs.build == 'true'
@@ -187,7 +189,11 @@ jobs:
           cp .github/script-to-build-gnu.sh ./
           cp .github/do-build.sh ./
 
-          bash ./script-to-build-gnu.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ steps.build-check.outputs.image }}" "${{ matrix.job.platform }}"
+          if [ ! -z "${{ steps.build-check.outputs.image }}" ]; then
+            bash ./script-to-build-gnu.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ steps.build-check.outputs.image }}" "${{ matrix.job.platform }}"
+          else
+            bash ./do-build.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ matrix.job.arch }}-linux-gnu"
+          fi
 
       - name: Upload binaries
         uses: softprops/action-gh-release@v2
