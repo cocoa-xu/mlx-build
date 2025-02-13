@@ -14,26 +14,8 @@ mkdir -p "${DESTDIR}"
 
 export DEBIAN_FRONTEND=noninteractive
 
-case $TRIPLET in
-  riscv64-linux-gnu )
-    apt-get update && \
-    apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config
-    ;;
-  armv7l-linux-gnueabihf )
-    apt-get update && \
-    apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config
-    ;;
-  i686-linux-gnu )
-    yum install -y curl make cmake automake autoconf pkgconfig
-    ;;
-  *-linux-gnu )
-    yum install -y curl make cmake automake autoconf pkg-config
-    ;;
-  * )
-    echo "Unknown triplet: ${TRIPLET}"
-    exit 1
-    ;;
-esac
+apt-get update
+apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config
 
 cd "${ROOTDIR}"
 if [ ! -f "${MLX_SRC_FILENAME}" ]; then

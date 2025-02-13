@@ -79,20 +79,18 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          - { target: "x86_64-linux-gnu", arch: "x86_64", image: "manylinux", platform: "linux/amd64", debug: "OFF" }
-          - { target: "x86_64-linux-gnu", arch: "x86_64", image: "manylinux", platform: "linux/amd64", debug: "ON" }
-          - { target: "i686-linux-gnu", arch: "i686", image: "quay.io/pypa/manylinux2014_i686", platform: "linux/386", debug: "OFF" }
-          - { target: "i686-linux-gnu", arch: "i686", image: "quay.io/pypa/manylinux2014_i686", platform: "linux/386", debug: "ON" }
-          - { target: "aarch64-linux-gnu", arch: "aarch64", image: "manylinux", platform: "linux/aarch64", debug: "OFF" }
-          - { target: "aarch64-linux-gnu", arch: "aarch64", image: "manylinux", platform: "linux/aarch64", debug: "ON" }
-          - { target: "armv7l-linux-gnueabihf", arch: "armv7l", image: "ubuntu:20.04", platform: "linux/arm/v7", debug: "OFF" }
-          - { target: "armv7l-linux-gnueabihf", arch: "armv7l", image: "ubuntu:20.04", platform: "linux/arm/v7", debug: "ON" }
-          - { target: "riscv64-linux-gnu", arch: "riscv64", image: "ubuntu:20.04", platform: "linux/riscv64", debug: "OFF" }
-          - { target: "riscv64-linux-gnu", arch: "riscv64", image: "ubuntu:20.04", platform: "linux/riscv64", debug: "ON" }
-          - { target: "ppc64le-linux-gnu", arch: "ppc64le", image: "manylinux", platform: "linux/ppc64le", debug: "OFF" }
-          - { target: "ppc64le-linux-gnu", arch: "ppc64le", image: "manylinux", platform: "linux/ppc64le", debug: "ON" }
-          - { target: "s390x-linux-gnu", arch: "s390x", image: "manylinux", platform: "linux/s390x", debug: "OFF" }
-          - { target: "s390x-linux-gnu", arch: "s390x", image: "manylinux", platform: "linux/s390x", debug: "ON" }
+          - { target: "x86_64-linux-gnu", arch: "x86_64", image: "ubuntu:22.04", platform: "linux/amd64", debug: "OFF" }
+          - { target: "x86_64-linux-gnu", arch: "x86_64", image: "ubuntu:22.04", platform: "linux/amd64", debug: "ON" }
+          - { target: "aarch64-linux-gnu", arch: "aarch64", image: "ubuntu:22.04", platform: "linux/aarch64", debug: "OFF" }
+          - { target: "aarch64-linux-gnu", arch: "aarch64", image: "ubuntu:22.04", platform: "linux/aarch64", debug: "ON" }
+          - { target: "armv7l-linux-gnueabihf", arch: "armv7l", image: "ubuntu:22.04", platform: "linux/arm/v7", debug: "OFF" }
+          - { target: "armv7l-linux-gnueabihf", arch: "armv7l", image: "ubuntu:22.04", platform: "linux/arm/v7", debug: "ON" }
+          - { target: "riscv64-linux-gnu", arch: "riscv64", image: "ubuntu:22.04", platform: "linux/riscv64", debug: "OFF" }
+          - { target: "riscv64-linux-gnu", arch: "riscv64", image: "ubuntu:22.04", platform: "linux/riscv64", debug: "ON" }
+          - { target: "ppc64le-linux-gnu", arch: "ppc64le", image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "OFF" }
+          - { target: "ppc64le-linux-gnu", arch: "ppc64le", image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "ON" }
+          - { target: "s390x-linux-gnu", arch: "s390x", image: "ubuntu:22.04", platform: "linux/s390x", debug: "OFF" }
+          - { target: "s390x-linux-gnu", arch: "s390x", image: "ubuntu:22.04", platform: "linux/s390x", debug: "ON" }
 
     name: ${{ matrix.job.target }}
 
