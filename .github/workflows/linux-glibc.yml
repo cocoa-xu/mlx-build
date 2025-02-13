@@ -54,14 +54,14 @@ on:
       #   options:
       #     - true
       #     - false
-      build_s390x:
-        description: 'Build s390x'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+      # build_s390x:
+      #   description: 'Build s390x'
+      #   required: false
+      #   default: 'true'
+      #   type: choice
+      #   options:
+      #     - true
+      #     - false
   push:
     tags:
       - 'v*'
@@ -89,8 +89,8 @@ jobs:
           - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "ON" }
           # - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "OFF" }
           # - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "ON" }
-          - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "OFF" }
-          - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "ON" }
+          # - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "OFF" }
+          # - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "ON" }
 
     name: ${{ matrix.job.target }}
 
@@ -116,10 +116,6 @@ jobs:
 
             if [ "${{ matrix.job.target }}" == "riscv64-linux-gnu" ]; then
               echo "build=${{ inputs.build_riscv64 }}" >> $GITHUB_OUTPUT
-            fi
-
-            if [ "${{ matrix.job.target }}" == "s390x-linux-gnu" ]; then
-              echo "build=${{ inputs.build_s390x }}" >> $GITHUB_OUTPUT
             fi
 
             export BUILD_VERSION_V="${{ inputs.verison }}"
