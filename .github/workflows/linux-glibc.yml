@@ -22,14 +22,14 @@ on:
         options:
           - true
           - false
-      build_i686:
-        description: 'Build i686'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - true
-          - false
+      # build_i686:
+      #   description: 'Build i686'
+      #   required: false
+      #   default: 'true'
+      #   type: choice
+      #   options:
+      #     - true
+      #     - false
       # build_armv7l:
       #   description: 'Build armv7l'
       #   required: false
@@ -68,6 +68,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   linux-glibc:
@@ -108,10 +109,6 @@ jobs:
 
             if [ "${{ matrix.job.target }}" == "x86_64-linux-gnu" ]; then
               echo "build=${{ inputs.build_x86_64 }}" >> $GITHUB_OUTPUT
-            fi
-
-            if [ "${{ matrix.job.target }}" == "i686-linux-gnu" ]; then
-              echo "build=${{ inputs.build_i686 }}" >> $GITHUB_OUTPUT
             fi
 
             if [ "${{ matrix.job.target }}" == "riscv64-linux-gnu" ]; then
