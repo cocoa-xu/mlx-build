@@ -28,8 +28,10 @@ cd "${MLX_SRC_DIR}"
 
 if [ "${MLX_DEBUG}" = "ON" ]; then
   export CMAKE_BUILD_TYPE=Debug
+  export ARCHIVE_FILENAME="mlx-${TRIPLET}-debug.tar.gz"
 else
   export CMAKE_BUILD_TYPE=Release
+  export ARCHIVE_FILENAME="mlx-${TRIPLET}.tar.gz"
 fi
 
 cmake -B build \
@@ -38,18 +40,13 @@ cmake -B build \
   -D MLX_BUILD_EXAMPLES=OFF \
   -D MLX_BUILD_BENCHMARKS=OFF \
   -D MLX_BUILD_PYTHON_BINDINGS=OFF \
-  -D MLX_BUILD_BLAS_FROM_SOURCE="ON" \
+  -D MLX_BUILD_BLAS_FROM_SOURCE=ON \
   -D BUILD_SHARED_LIBS=ON \
   .
 cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
 cd build
 make DESTDIR="${DESTDIR}" install
-
-if [ "${MLX_DEBUG}" = "ON" ]; then
-  export ARCHIVE_FILENAME="mlx-${TRIPLET}.tar.gz"
-else
-  export ARCHIVE_FILENAME="mlx-${TRIPLET}-debug.tar.gz"
-fi
+ls -lah "${DESTDIR}/usr/local/lib"
 tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
 
 cd "${ROOTDIR}/artifact"
