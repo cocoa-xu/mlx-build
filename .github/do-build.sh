@@ -16,7 +16,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 export SUDO="$(which sudo)"
 ${SUDO} apt-get update
-${SUDO} apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config git
+${SUDO} apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config git patchelf
 
 cd "${ROOTDIR}"
 if [ ! -f "${MLX_SRC_FILENAME}" ]; then
@@ -48,6 +48,8 @@ cd build
 make DESTDIR="${DESTDIR}" install
 cd _deps/openblas-build
 make DESTDIR="${DESTDIR}" install
+cd "${DESTDIR}/usr/local/lib"
+patchelf --force-rpath --set-rpath '$ORIGIN' libmlx.so
 ls -lah "${DESTDIR}/usr/local/lib"
 tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
 
