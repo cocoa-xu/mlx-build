@@ -183,16 +183,6 @@ jobs:
             bash ./do-build.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ matrix.job.arch }}-linux-gnu" "${ROOTDIR}"
           fi
 
-      - name: Upload binaries
-        uses: softprops/action-gh-release@v2
-        if: steps.build-check.outputs.build == 'true'
-        with:
-          tag_name: v${{ steps.build-check.outputs.version }}
-          name: v${{ steps.build-check.outputs.version }}
-          files: |
-            openssl-*.tar.gz
-            openssl-*.sha256
-
       - name: Attest
         uses: actions/attest-build-provenance@v1
         if: steps.build-check.outputs.build == 'true'
@@ -201,7 +191,8 @@ jobs:
             artifact/*.tar.gz
             artifact/*.sha256
 
-      - uses: softprops/action-gh-release@v2
+      - name: Upload binaries
+        uses: softprops/action-gh-release@v2
         if: steps.build-check.outputs.build == 'true'
         with:
           tag_name: v${{ steps.build-check.outputs.version }}
