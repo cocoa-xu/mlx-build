@@ -7,6 +7,7 @@ MLX_DEBUG=$2
 ARCH=$3
 TRIPLET=$4
 ROOTDIR=$5
+CMAKE_VERSION=${6:-"3.31.5"}
 MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
 MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
 export DESTDIR="${ROOTDIR}/artifact/mlx"
@@ -19,6 +20,18 @@ ${SUDO} apt-get update
 ${SUDO} apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config git patchelf
 
 cd "${ROOTDIR}"
+
+case "${ARCH}" in
+  x86_64 | aarch64)
+    CMAKE_FILENAME="cmake-${CMAKE_VERSION}-linux-${ARCH}"
+    curl -fSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_FILENAME}.tar.gz" -o "${CMAKE_FILENAME}.tar.gz"
+    tar -xf "${CMAKE_FILENAME}.tar.gz"
+    export PATH="${ROOTDIR}/${CMAKE_FILENAME}/bin:${PATH}"
+    ;;
+  *)
+    ;;
+esac
+
 if [ ! -f "${MLX_SRC_FILENAME}" ]; then
   curl -fSL "https://github.com/ml-explore/mlx/archive/refs/tags/v${MLX_VERSION}.tar.gz" -o "${MLX_SRC_FILENAME}"
 fi
