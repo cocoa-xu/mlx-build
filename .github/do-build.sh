@@ -60,8 +60,6 @@ cmake -B build \
 cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
 cd build
 make DESTDIR="${DESTDIR}" install
-cd _deps/openblas-build
-make DESTDIR="${DESTDIR}" install
 cd "${DESTDIR}/usr/local/lib"
 patchelf --force-rpath --set-rpath '$ORIGIN' libmlx.so
 ls -lah "${DESTDIR}/usr/local/lib"
