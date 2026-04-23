@@ -17,7 +17,8 @@ export DEBIAN_FRONTEND=noninteractive
 
 export SUDO="$(which sudo)"
 ${SUDO} apt-get update
-${SUDO} apt-get install -y gcc g++ curl make cmake automake autoconf pkg-config git patchelf libopenblas-dev liblapack-dev liblapacke-dev
+${SUDO} apt-get install -y gcc-10 g++-10 gfortran-10 curl make cmake automake autoconf pkg-config git patchelf libopenblas-dev liblapack-dev liblapacke-dev
+export CC=gcc-10 CXX=g++-10 FC=gfortran-10
 
 cd "${ROOTDIR}"
 
