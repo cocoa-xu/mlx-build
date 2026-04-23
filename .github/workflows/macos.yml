@@ -25,10 +25,10 @@ jobs:
       fail-fast: false
       matrix:
         job: 
-          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "OFF", jit: "ON", variant: "jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "OFF", jit: "OFF", variant: "" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "ON", variant: "debug-jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-14", debug: "ON", jit: "OFF", variant: "debug" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "ON", variant: "jit" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "OFF", variant: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "ON", variant: "debug-jit" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "OFF", variant: "debug" }
           # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "ON", variant: "jit" }
           # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "OFF", variant: "" }
           # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "ON", variant: "debug-jit" }
