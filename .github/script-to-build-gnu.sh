@@ -7,16 +7,23 @@ MLX_DEBUG=$2
 ARCH=$3
 IMAGE_NAME=$4
 DOCKER_PLATFORM=$5
+PATCH_FILE=${6:-""}
 
 TARGET="${ARCH}-linux-gnu"
 if [ "${ARCH}" = "armv7l" ]; then
   TARGET="armv7l-linux-gnueabihf"
 fi
 
+# PATCH_FILE is relative to the repo root ($(pwd)), which is mounted at /work inside Docker
+DOCKER_PATCH_FILE=""
+if [ -n "${PATCH_FILE}" ]; then
+  DOCKER_PATCH_FILE="/work/${PATCH_FILE}"
+fi
+
 if [ ! -z "${DOCKER_PLATFORM}" ]; then
   sudo docker run --privileged --network=host --rm -v $(pwd):/work --platform="${DOCKER_PLATFORM}" "${IMAGE_NAME}" \
-    sh -c "chmod a+x /work/do-build.sh && /work/do-build.sh ${MLX_VERSION} ${MLX_DEBUG} ${ARCH} ${TARGET} /work"
+    sh -c "chmod a+x /work/do-build.sh && /work/do-build.sh ${MLX_VERSION} ${MLX_DEBUG} ${ARCH} ${TARGET} /work \"\" \"${DOCKER_PATCH_FILE}\""
 else
   sudo docker run --privileged --network=host --rm -v $(pwd):/work "${IMAGE_NAME}" \
-    sh -c "chmod a+x /work/do-build.sh && /work/do-build.sh ${MLX_VERSION} ${MLX_DEBUG} ${ARCH} ${TARGET} /work"
+    sh -c "chmod a+x /work/do-build.sh && /work/do-build.sh ${MLX_VERSION} ${MLX_DEBUG} ${ARCH} ${TARGET} /work \"\" \"${DOCKER_PATCH_FILE}\""
 fi

@@ -25,14 +25,16 @@ jobs:
       fail-fast: false
       matrix:
         job: 
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "ON", variant: "jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "OFF", variant: "" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "ON", variant: "debug-jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "OFF", variant: "debug" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "ON", variant: "jit" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "OFF", variant: "" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "ON", variant: "debug-jit" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "OFF", variant: "debug" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "ON", variant: "jit", patch: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "OFF", variant: "", patch: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "ON", variant: "debug-jit", patch: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "OFF", variant: "debug", patch: "" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "ON", variant: "experimental-jit", patch: "patches/mlx-0.31.2-export-compile-internals.patch" }
+          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "OFF", variant: "experimental", patch: "patches/mlx-0.31.2-export-compile-internals.patch" }
+          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "ON", variant: "jit", patch: "" }
+          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "OFF", variant: "", patch: "" }
+          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "ON", variant: "debug-jit", patch: "" }
+          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "OFF", variant: "debug", patch: "" }
 
     name: ${{ matrix.job.target }} / ${{ matrix.job.variant }}
 
@@ -90,6 +92,10 @@ jobs:
 
           tar -xzf "${MLX_SRC_FILENAME}"
           cd "${MLX_SRC_DIR}"
+
+          if [ -n "${{ matrix.job.patch }}" ]; then
+            patch -p1 -N -d "${MLX_SRC_DIR}" -i "${ROOTDIR}/${{ matrix.job.patch }}"
+          fi
 
           if [ "${{ matrix.job.debug }}" = "ON" ]; then
             export CMAKE_BUILD_TYPE=Debug

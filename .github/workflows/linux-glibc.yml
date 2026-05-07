@@ -81,14 +81,16 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:20.04", platform: "linux/amd64", debug: "OFF" }
-          - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:20.04", platform: "linux/amd64", debug: "ON" }
-          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:20.04", platform: "linux/aarch64", debug: "OFF" }
-          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:20.04", platform: "linux/aarch64", debug: "ON" }
-          # - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "OFF" }
-          # - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "ON" }
-          - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "OFF" }
-          - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "ON" }
+          - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:20.04", platform: "linux/amd64", debug: "OFF", patch: "" }
+          - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:20.04", platform: "linux/amd64", debug: "ON", patch: "" }
+          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:20.04", platform: "linux/aarch64", debug: "OFF", patch: "" }
+          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:20.04", platform: "linux/aarch64", debug: "ON", patch: "" }
+          # - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "OFF", patch: "" }
+          # - { target: "armv7l-linux-gnueabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "ubuntu:24.04", platform: "linux/arm/v7", debug: "ON", patch: "" }
+          - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "OFF", patch: "" }
+          - { target: "riscv64-linux-gnu", arch: "riscv64", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/riscv64", debug: "ON", patch: "" }
+          - { target: "x86_64-linux-gnu", arch: "x86_64", runs-on: ubuntu-latest, image: "ubuntu:20.04", platform: "linux/amd64", debug: "OFF", patch: "patches/mlx-0.31.2-export-compile-internals.patch" }
+          - { target: "aarch64-linux-gnu", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "ubuntu:20.04", platform: "linux/aarch64", debug: "OFF", patch: "patches/mlx-0.31.2-export-compile-internals.patch" }
           # - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "OFF" }
           # - { target: "ppc64le-linux-gnu", arch: "ppc64le", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/ppc64le", debug: "ON" }
           # - { target: "s390x-linux-gnu", arch: "s390x", runs-on: ubuntu-latest, image: "ubuntu:24.04", platform: "linux/s390x", debug: "OFF" }
@@ -166,10 +168,15 @@ jobs:
           cp .github/script-to-build-gnu.sh ./
           cp .github/do-build.sh ./
 
+          PATCH_ARG=""
+          if [ -n "${{ matrix.job.patch }}" ]; then
+            PATCH_ARG="${ROOTDIR}/${{ matrix.job.patch }}"
+          fi
+
           if [ ! -z "${{ steps.build-check.outputs.image }}" ]; then
-            bash ./script-to-build-gnu.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ steps.build-check.outputs.image }}" "${{ matrix.job.platform }}"
+            bash ./script-to-build-gnu.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ steps.build-check.outputs.image }}" "${{ matrix.job.platform }}" "${{ matrix.job.patch }}"
           else
-            bash ./do-build.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ matrix.job.arch }}-linux-gnu" "${ROOTDIR}"
+            bash ./do-build.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ matrix.job.arch }}-linux-gnu" "${ROOTDIR}" "" "${PATCH_ARG}"
           fi
 
       - name: Attest

@@ -8,6 +8,7 @@ ARCH=$3
 TRIPLET=$4
 ROOTDIR=$5
 CMAKE_VERSION=${6:-"3.31.5"}
+PATCH_FILE=${7:-""}
 MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
 MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
 export DESTDIR="${ROOTDIR}/artifact/mlx"
@@ -40,12 +41,24 @@ fi
 tar -xf "${MLX_SRC_FILENAME}"
 cd "${MLX_SRC_DIR}"
 
+if [ -n "${PATCH_FILE}" ]; then
+  patch -p1 -N -d "${MLX_SRC_DIR}" -i "${PATCH_FILE}"
+fi
+
 if [ "${MLX_DEBUG}" = "ON" ]; then
   export CMAKE_BUILD_TYPE=Debug
-  export ARCHIVE_FILENAME="mlx-${TRIPLET}-debug.tar.gz"
+  if [ -n "${PATCH_FILE}" ]; then
+    export ARCHIVE_FILENAME="mlx-${TRIPLET}-debug-experimental.tar.gz"
+  else
+    export ARCHIVE_FILENAME="mlx-${TRIPLET}-debug.tar.gz"
+  fi
 else
   export CMAKE_BUILD_TYPE=Release
-  export ARCHIVE_FILENAME="mlx-${TRIPLET}.tar.gz"
+  if [ -n "${PATCH_FILE}" ]; then
+    export ARCHIVE_FILENAME="mlx-${TRIPLET}-experimental.tar.gz"
+  else
+    export ARCHIVE_FILENAME="mlx-${TRIPLET}.tar.gz"
+  fi
 fi
 
 cmake -B build \

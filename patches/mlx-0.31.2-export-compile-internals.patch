@@ -1,0 +1,51 @@
+diff --color -ruN old/mlx/compile.cpp new/mlx/compile.cpp
+--- a/mlx/compile.cpp	2026-04-21 21:35:20
++++ b/mlx/compile.cpp	2026-05-06 23:22:17
+@@ -781,7 +781,7 @@
+
+ // Extract sub-graphs of the graph that can be compiled
+ // and replace them with a Compiled Primitive.
+-void compile_fuse(
++MLX_API void compile_fuse(
+     std::vector<array>& tape,
+     ParentsMap& parents_map,
+     const std::vector<array>& inputs,
+diff --color -ruN old/mlx/compile_impl.h new/mlx/compile_impl.h
+--- a/mlx/compile_impl.h	2026-04-21 21:35:20
++++ b/mlx/compile_impl.h	2026-05-06 23:22:17
+@@ -49,24 +49,32 @@
+     std::unordered_map<std::uintptr_t, std::vector<std::pair<array, int>>>;
+
+ // Traverses the graph to build a tape and a map of array ids to their parents
+-std::pair<std::vector<array>, ParentsMap> compile_dfs(
++MLX_API std::pair<std::vector<array>, ParentsMap> compile_dfs(
+     const std::vector<array>& inputs,
+     std::vector<array>& outputs,
+     const std::vector<array>& original_inputs);
+
+ // Simplify the tape.
+-void compile_simplify(
++MLX_API void compile_simplify(
+     std::vector<array>& tape,
+     ParentsMap& parents_map,
+     std::vector<array>& outputs,
+     int passes);
+
+-std::vector<array> compile_replace(
++MLX_API std::vector<array> compile_replace(
+     const std::vector<array>& tape,
+     const std::vector<array>& trace_inputs,
+     const std::vector<array>& trace_outputs,
+     const std::vector<array>& inputs,
+     bool shapeless);
++
++// Extract fusable sub-graphs and replace them with a Compiled primitive.
++// Must be called after compile_simplify; modifies tape and outputs in-place.
++MLX_API void compile_fuse(
++    std::vector<array>& tape,
++    ParentsMap& parents_map,
++    const std::vector<array>& inputs,
++    std::vector<array>& outputs);
+
+ void compile_validate_shapeless(const std::vector<array>& tape);
+
