@@ -1,0 +1,170 @@
+name: ios
+
+on:
+  workflow_dispatch:
+    inputs:
+      mlx_verison:
+        description: 'MLX Version (X.Y.Z)'
+        required: true
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  ios:
+    runs-on: macos-26
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.mlx_verison }}-${{ matrix.job.target }}-${{ matrix.job.variant }}
+      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          # Device — arm64 iPhone hardware.
+          - { target: "arm64-apple-ios", sysroot: "iphoneos", arch: "arm64", debug: "OFF", variant: "" }
+          - { target: "arm64-apple-ios", sysroot: "iphoneos", arch: "arm64", debug: "ON",  variant: "debug" }
+          # Simulator on Apple silicon Mac hosts.
+          - { target: "arm64-apple-iossimulator", sysroot: "iphonesimulator", arch: "arm64", debug: "OFF", variant: "" }
+          - { target: "arm64-apple-iossimulator", sysroot: "iphonesimulator", arch: "arm64", debug: "ON",  variant: "debug" }
+
+    name: ${{ matrix.job.target }} / ${{ matrix.job.variant }}
+
+    steps:
+      - name: Build Check
+        id: build-check
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            export MLX_VERSION_V=${GITHUB_REF##*/v}
+          else
+            export MLX_VERSION_V=${{ inputs.mlx_verison }}
+          fi
+          export MLX_VERSION="${MLX_VERSION_V#v}"
+
+          echo "build=true" >> $GITHUB_OUTPUT
+          echo "version=${MLX_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        if: steps.build-check.outputs.build == 'true'
+        uses: actions/checkout@v4
+
+      - name: Cache MLX Source Code
+        if: steps.build-check.outputs.build == 'true'
+        id: cache-src
+        uses: actions/cache@v4
+        with:
+          key: mlx-${{ steps.build-check.outputs.version }}
+          path: |
+            ./mlx-v${{ steps.build-check.outputs.version }}.tar.gz
+
+      - name: Download MLX Source Code
+        if: steps.build-check.outputs.build == 'true' && steps.cache-src.outputs.cache-hit != 'true'
+        run: |
+          export MLX_VERSION=${{ steps.build-check.outputs.version }}
+          export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
+          curl -fSL "https://github.com/ml-explore/mlx/archive/refs/tags/v${MLX_VERSION}.tar.gz" -o "${MLX_SRC_FILENAME}"
+
+      - name: Install Metal Toolchain
+        if: steps.build-check.outputs.build == 'true'
+        run: |
+          # Optional Xcode component (~700 MB) required to compile the
+          # .metal kernels into a .metallib. The macOS runners image
+          # may already have it; the command is idempotent.
+          sudo xcodebuild -downloadComponent MetalToolchain || true
+          xcrun -f metal
+          xcrun metal --version
+
+      - name: Compile MLX
+        if: steps.build-check.outputs.build == 'true'
+        id: target
+        run: |
+          export MLX_VERSION=${{ steps.build-check.outputs.version }}
+          export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
+
+          export ROOTDIR="$(pwd)"
+          export MLX_SRC_DIR="${ROOTDIR}/mlx-${MLX_VERSION}"
+          export DESTDIR="${ROOTDIR}/artifact/mlx"
+
+          rm -rf "${MLX_SRC_DIR}"
+          rm -rf "${DESTDIR}"
+          mkdir -p "${DESTDIR}"
+
+          tar -xzf "${MLX_SRC_FILENAME}"
+          cd "${MLX_SRC_DIR}"
+
+          # Upstream MLX 0.25.1 only enables Metal when
+          # CMAKE_SYSTEM_NAME=Darwin and hardcodes `xcrun -sdk macosx`
+          # in CMakeLists.txt. The patch switches both based on
+          # CMAKE_SYSTEM_NAME so iOS gets iphoneos + -mios-version-min.
+          # Drop this step once equivalent support lands upstream.
+          patch -p1 < "${ROOTDIR}/patches/ios-metal-build.patch"
+
+          if [ "${{ matrix.job.debug }}" = "ON" ]; then
+            export CMAKE_BUILD_TYPE=Debug
+          else
+            export CMAKE_BUILD_TYPE=Release
+          fi
+
+          # iOS apps can't dlopen libraries from app data — link MLX
+          # statically. BUILD_SHARED_LIBS=OFF produces libmlx.a (the
+          # Metal kernels still build into mlx.metallib alongside it).
+          cmake -B build \
+            -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -D CMAKE_SYSTEM_NAME=iOS \
+            -D CMAKE_OSX_SYSROOT=${{ matrix.job.sysroot }} \
+            -D CMAKE_OSX_ARCHITECTURES=${{ matrix.job.arch }} \
+            -D CMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
+            -D MLX_BUILD_METAL=ON \
+            -D MLX_BUILD_TESTS=OFF \
+            -D MLX_BUILD_EXAMPLES=OFF \
+            -D MLX_BUILD_BENCHMARKS=OFF \
+            -D MLX_BUILD_PYTHON_BINDINGS=OFF \
+            -D BUILD_SHARED_LIBS=OFF \
+            .
+
+          cmake --build build --config "${CMAKE_BUILD_TYPE}" -j$(sysctl -n hw.ncpu)
+
+          # Stage outputs ourselves — `cmake --install` on the static
+          # build doesn't lay the metallib next to libmlx.a, and the
+          # downstream EMLX/mob consumers want both in $PREFIX/lib.
+          STAGE="${DESTDIR}/usr/local"
+          mkdir -p "${STAGE}/lib" "${STAGE}/include/mlx"
+          cp build/libmlx.a "${STAGE}/lib/"
+          cp build/mlx/backend/metal/kernels/mlx.metallib "${STAGE}/lib/"
+          rsync -a --include='*.h' --include='*/' --exclude='*' \
+            mlx/ "${STAGE}/include/mlx/"
+          if [ -d build/_deps/json-src/include ]; then
+            mkdir -p "${STAGE}/include/_deps/json"
+            rsync -a build/_deps/json-src/include/ "${STAGE}/include/_deps/json/"
+          fi
+
+          if [ -z "${{ matrix.job.variant }}" ]; then
+            export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}.tar.gz"
+          else
+            export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}-${{ matrix.job.variant }}.tar.gz"
+          fi
+          tar -C "${STAGE}" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
+
+          cd "${ROOTDIR}/artifact"
+          shasum -a 256 "${ARCHIVE_FILENAME}" | tee "${ARCHIVE_FILENAME}.sha256"
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        if: steps.build-check.outputs.build == 'true'
+        with:
+          subject-path: |
+            artifact/*.tar.gz
+            artifact/*.sha256
+
+      - uses: softprops/action-gh-release@v2
+        if: steps.build-check.outputs.build == 'true'
+        with:
+          tag_name: v${{ steps.build-check.outputs.version }}
+          name: v${{ steps.build-check.outputs.version }}
+          files: |
+            artifact/*.tar.gz
+            artifact/*.sha256
