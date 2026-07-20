@@ -70,6 +70,22 @@ jobs:
           export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
           curl -fSL "https://github.com/ml-explore/mlx/archive/refs/tags/v${MLX_VERSION}.tar.gz" -o "${MLX_SRC_FILENAME}"
 
+      - name: Install Metal toolchain
+        if: steps.build-check.outputs.build == 'true'
+        run: |
+          # Xcode 26 no longer bundles the Metal compiler; it ships as a
+          # separately-downloaded component. GitHub pre-installs it for
+          # released Xcode 26, so this usually just verifies. Download
+          # (with retry for transient catalog fetches) only if missing.
+          if ! xcrun -sdk macosx metal --version >/dev/null 2>&1; then
+            sudo xcodebuild -runFirstLaunch || true
+            for i in 1 2 3; do
+              sudo xcodebuild -downloadComponent MetalToolchain && break
+              echo "MetalToolchain download failed, retry ${i}..."; sleep 15
+            done
+          fi
+          xcrun -sdk macosx metal --version
+
       - name: Compile MLX
         if: steps.build-check.outputs.build == 'true'
         id: target
@@ -105,6 +121,7 @@ jobs:
 
           cmake -B build \
             -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -D CMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
             -D MLX_BUILD_TESTS=OFF \
             -D MLX_BUILD_EXAMPLES=OFF \
             -D MLX_BUILD_BENCHMARKS=OFF \
@@ -128,16 +145,26 @@ jobs:
           cd "${ROOTDIR}/artifact"
           shasum -a 256 "${ARCHIVE_FILENAME}" | tee "${ARCHIVE_FILENAME}.sha256"
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: steps.build-check.outputs.build == 'true'
+        with:
+          name: mlx-${{ matrix.job.target }}${{ matrix.job.variant && format('-{0}', matrix.job.variant) || '' }}
+          path: |
+            artifact/*.tar.gz
+            artifact/*.sha256
+          if-no-files-found: error
+
       - name: Attest
         uses: actions/attest-build-provenance@v1
-        if: steps.build-check.outputs.build == 'true'
+        if: steps.build-check.outputs.build == 'true' && github.event_name == 'push'
         with:
           subject-path: |
             artifact/*.tar.gz
             artifact/*.sha256
 
       - uses: softprops/action-gh-release@v2
-        if: steps.build-check.outputs.build == 'true'
+        if: steps.build-check.outputs.build == 'true' && github.event_name == 'push'
         with:
           tag_name: v${{ steps.build-check.outputs.version }}
           name: v${{ steps.build-check.outputs.version }}
