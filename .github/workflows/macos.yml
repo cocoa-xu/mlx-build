@@ -151,14 +151,14 @@ jobs:
 
       - name: Attest
         uses: actions/attest-build-provenance@v1
-        if: steps.build-check.outputs.build == 'true' && github.event_name == 'push'
+        if: steps.build-check.outputs.build == 'true'
         with:
           subject-path: |
             artifact/*.tar.gz
             artifact/*.sha256
 
       - uses: softprops/action-gh-release@v2
-        if: steps.build-check.outputs.build == 'true' && github.event_name == 'push'
+        if: steps.build-check.outputs.build == 'true'
         with:
           tag_name: v${{ steps.build-check.outputs.version }}
           name: v${{ steps.build-check.outputs.version }}
