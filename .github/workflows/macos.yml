@@ -17,24 +17,22 @@ permissions:
 
 jobs:
   macos:
-    runs-on: ${{ matrix.job.runs-on }}
+    runs-on: macos-26
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.mlx_verison }}-${{ matrix.job.target }}-${{ matrix.job.variant }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.mlx_verison }}-${{ matrix.target }}-${{ matrix.deploy }}-${{ matrix.debug }}-${{ matrix.jit }}
       cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
-        job: 
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "ON", variant: "jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "OFF", jit: "OFF", variant: "" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "ON", variant: "debug-jit" }
-          - { target: "arm64-apple-darwin", runs-on: "macos-26", debug: "ON", jit: "OFF", variant: "debug" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "ON", variant: "jit" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "OFF", jit: "OFF", variant: "" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "ON", variant: "debug-jit" }
-          # - { target: "x86_64-apple-darwin", runs-on: "macos-15-intel", debug: "ON", jit: "OFF", variant: "debug" }
+        # 2 (release/debug) x 2 (jit/no-jit) x 2 (deployment target) = 8.
+        # deploy 14.0 -> Metal 3.1, runs on macOS 14+, no ahead-of-time NAX;
+        # deploy 26.2 -> Metal 4.0, macOS 26.2+, NAX kernels baked in.
+        target: ["arm64-apple-darwin"]
+        debug: ["OFF", "ON"]
+        jit: ["ON", "OFF"]
+        deploy: ["14.0", "26.2"]
 
-    name: ${{ matrix.job.target }} / ${{ matrix.job.variant }}
+    name: ${{ matrix.target }} / ${{ matrix.deploy }} / debug=${{ matrix.debug }} jit=${{ matrix.jit }}
 
     steps:
       - name: Build Check
@@ -107,39 +105,35 @@ jobs:
           tar -xzf "${MLX_SRC_FILENAME}"
           cd "${MLX_SRC_DIR}"
 
-          if [ "${{ matrix.job.debug }}" = "ON" ]; then
+          if [ "${{ matrix.debug }}" = "ON" ]; then
             export CMAKE_BUILD_TYPE=Debug
           else
             export CMAKE_BUILD_TYPE=Release
           fi
 
-          if [ "${{ matrix.job.target }}" = "x86_64-apple-darwin" ]; then
-            export MLX_ENABLE_X64_MAC=ON
-          else
-            export MLX_ENABLE_X64_MAC=OFF
-          fi
-
           cmake -B build \
             -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-            -D CMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+            -D CMAKE_OSX_DEPLOYMENT_TARGET=${{ matrix.deploy }} \
             -D MLX_BUILD_TESTS=OFF \
             -D MLX_BUILD_EXAMPLES=OFF \
             -D MLX_BUILD_BENCHMARKS=OFF \
             -D MLX_BUILD_PYTHON_BINDINGS=OFF \
-            -D MLX_ENABLE_X64_MAC=${MLX_ENABLE_X64_MAC} \
-            -D MLX_METAL_DEBUG=${{ matrix.job.debug }} \
-            -D MLX_METAL_JIT=${{ matrix.job.jit }} \
+            -D MLX_METAL_DEBUG=${{ matrix.debug }} \
+            -D MLX_METAL_JIT=${{ matrix.jit }} \
             -D BUILD_SHARED_LIBS=ON \
             .
 
           cmake --build build --config "${CMAKE_BUILD_TYPE}" -j$(sysctl -n hw.ncpu)
           cmake --install build --config "${CMAKE_BUILD_TYPE}"
 
-          if [ -z "${{ matrix.job.variant }}" ]; then
-            export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}.tar.gz"
-          else
-            export ARCHIVE_FILENAME="mlx-${{ matrix.job.target }}-${{ matrix.job.variant }}.tar.gz"
-          fi
+          # Name keyed by deployment target (the decisive axis):
+          # mlx-<target>-<deploy>[-debug][-jit].tar.gz
+          VARIANT=""
+          if [ "${{ matrix.debug }}" = "ON" ]; then VARIANT="debug"; fi
+          if [ "${{ matrix.jit }}" = "ON" ]; then VARIANT="${VARIANT:+${VARIANT}-}jit"; fi
+          ARCHIVE_BASENAME="mlx-${{ matrix.target }}-${{ matrix.deploy }}${VARIANT:+-${VARIANT}}"
+          ARCHIVE_FILENAME="${ARCHIVE_BASENAME}.tar.gz"
+          echo "name=${ARCHIVE_BASENAME}" >> $GITHUB_OUTPUT
           tar -C "${DESTDIR}/usr/local" -czf "${ROOTDIR}/artifact/${ARCHIVE_FILENAME}" .
 
           cd "${ROOTDIR}/artifact"
@@ -149,7 +143,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: steps.build-check.outputs.build == 'true'
         with:
-          name: mlx-${{ matrix.job.target }}${{ matrix.job.variant && format('-{0}', matrix.job.variant) || '' }}
+          name: ${{ steps.target.outputs.name }}
           path: |
             artifact/*.tar.gz
             artifact/*.sha256
