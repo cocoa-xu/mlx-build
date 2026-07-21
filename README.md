@@ -45,17 +45,32 @@ Use the `14.0` builds for broad compatibility; use `26.2` only if you target mac
 
 ### Linux
 
-Each release ships **6 Linux (glibc) variants** — the cross product of two axes:
-
-| axis | values | effect |
-|------|--------|--------|
-| architecture | `x86_64` / `aarch64` / `riscv64` | target CPU (cross-built in Docker + QEMU) |
-| build type | release / `debug` | `debug` = `Debug` CMake build |
+Two C libraries are built, each in release and `debug`:
 
 ```
-mlx-<arch>-linux-gnu[-debug].tar.gz
+mlx-<arch>-linux-<gnu|musl>[-debug].tar.gz
 ```
 
-e.g. `mlx-x86_64-linux-gnu.tar.gz`, `mlx-aarch64-linux-gnu-debug.tar.gz`, `mlx-riscv64-linux-gnu.tar.gz`.
+| libc | arches |
+|------|--------|
+| **glibc** (`-linux-gnu`) | `x86_64`, `aarch64`, `riscv64`, `armv7l` (`armv7l-linux-gnueabihf`), `ppc64le`, `s390x` |
+| **musl** (`-linux-musl`) | `x86_64`, `aarch64`, `riscv64`, `armv7l` (`armv7l-linux-musleabihf`) |
 
-Built against a glibc baseline: `x86_64` and `aarch64` on Ubuntu 20.04 (glibc 2.31), `riscv64` on Ubuntu 24.04 (glibc 2.39) — each binary needs at least that glibc at runtime.
+e.g. `mlx-x86_64-linux-gnu.tar.gz`, `mlx-aarch64-linux-musl-debug.tar.gz`, `mlx-s390x-linux-gnu.tar.gz`.
+
+All are CPU builds with the full feature set — BLAS/LAPACK via OpenBLAS, GGUF + safetensors, distributed (ring + MPI). glibc `x86_64`/`aarch64` target a ~2.14 floor (Ubuntu 20.04 + gcc-13); the rest build on Ubuntu 24.04 / Alpine. Each binary dynamically links OpenBLAS + libgfortran + libstdc++, so the target must provide them (`apt install libopenblas0 libgfortran5` or `apk add openblas libgfortran libstdc++`).
+
+## Usage
+
+Install a release in a workflow with the bundled action — it auto-detects the target triplet:
+
+```yaml
+- uses: cocoa-xu/mlx-build@main
+  with:
+    mlx-version: "~> 0.32"        # exact ("0.32.0") or requirement (">= 0.31.0")
+    # debug: true                # debug variant
+    # deployment-target: "26.2"  # macOS: NAX-enabled build (default 14.0)
+    # jit: true                  # macOS: JIT Metal variant
+```
+
+It exports `MLX_DIR` / `CMAKE_PREFIX_PATH` (for `find_package(MLX)`) and `LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH`, and sets `install-dir`, `lib-dir`, `include-dir`, and the resolved `mlx-version` / `triplet` as step outputs.
