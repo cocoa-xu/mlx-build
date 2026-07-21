@@ -40,6 +40,13 @@ jobs:
             cuda_id: "13"
             cudnn_id: "9"
             cudnn_url: "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-9.23.0.39_cuda13-archive.tar.xz"
+          - target: "aarch64-linux-gnu"
+            arch: "aarch64"
+            runs-on: ubuntu-24.04-arm
+            container: "nvidia/cuda:13.0.1-devel-ubuntu22.04"
+            cuda_id: "13"
+            cudnn_id: "9"
+            cudnn_url: "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-sbsa/cudnn-linux-sbsa-9.23.0.39_cuda13-archive.tar.xz"
 
     name: ${{ matrix.job.target }}-cuda${{ matrix.job.cuda_id }}-cudnn${{ matrix.job.cudnn_id }}
 
