@@ -28,6 +28,8 @@ mlx-arm64-apple-darwin-<deployment-target>[-debug][-jit].tar.gz
 
 e.g. `mlx-arm64-apple-darwin-14.0.tar.gz`, `mlx-arm64-apple-darwin-26.2-debug-jit.tar.gz`.
 
+> **Naming changed at `v0.31.0`.** The deployment-target segment is new. Releases from `v0.31.0` onward use the 8-variant scheme above; earlier releases (`v0.30.x` and below) use the old `mlx-arm64-apple-darwin[-debug][-jit].tar.gz` names (4 variants, no deployment target).
+
 The filename is keyed on the **deployment target**, not `MLX_METAL_VERSION`, because the deployment target is the **decisive factor**: it is the one knob we set, and everything else derives from it. MLX probes the Metal language version with `-mmacosx-version-min=<deployment-target>`, so the deployment target alone determines the Metal version, the minimum OS, and whether the NAX kernels are compiled in:
 
 | deployment target | `MLX_METAL_VERSION` | runs on | ahead-of-time NAX kernels |
