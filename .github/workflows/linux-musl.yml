@@ -1,0 +1,148 @@
+name: linux-musl
+
+on:
+  workflow_dispatch:
+    inputs:
+      verison:
+        description: 'MLX Version'
+        required: true
+      build_x86_64:
+        description: 'Build x86_64'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      build_aarch64:
+        description: 'Build aarch64'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      build_armv7l:
+        description: 'Build armv7l'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      build_riscv64:
+        description: 'Build riscv64'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  linux-musl:
+    runs-on: ${{ matrix.job.runs-on }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.job.target }}-${{ inputs.verison }}-${{ matrix.job.debug }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { target: "x86_64-linux-musl", arch: "x86_64", runs-on: ubuntu-latest, image: "alpine:latest", platform: "linux/amd64", debug: "OFF" }
+          - { target: "x86_64-linux-musl", arch: "x86_64", runs-on: ubuntu-latest, image: "alpine:latest", platform: "linux/amd64", debug: "ON" }
+          - { target: "aarch64-linux-musl", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "alpine:latest", platform: "linux/aarch64", debug: "OFF" }
+          - { target: "aarch64-linux-musl", arch: "aarch64", runs-on: ubuntu-24.04-arm, image: "alpine:latest", platform: "linux/aarch64", debug: "ON" }
+          - { target: "armv7l-linux-musleabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "alpine:latest", platform: "linux/arm/v7", debug: "OFF" }
+          - { target: "armv7l-linux-musleabihf", arch: "armv7l", runs-on: ubuntu-24.04-arm, image: "alpine:latest", platform: "linux/arm/v7", debug: "ON" }
+          - { target: "riscv64-linux-musl", arch: "riscv64", runs-on: ubuntu-latest, image: "alpine:latest", platform: "linux/riscv64", debug: "OFF" }
+          - { target: "riscv64-linux-musl", arch: "riscv64", runs-on: ubuntu-latest, image: "alpine:latest", platform: "linux/riscv64", debug: "ON" }
+
+    name: ${{ matrix.job.target }}
+
+    steps:
+      - name: Build Check
+        id: build-check
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+            export BUILD_VERSION_V="v${GITHUB_REF##*/v}"
+          else
+            if [ "${{ matrix.job.target }}" == "x86_64-linux-musl" ]; then
+              echo "build=${{ inputs.build_x86_64 }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [ "${{ matrix.job.target }}" == "aarch64-linux-musl" ]; then
+              echo "build=${{ inputs.build_aarch64 }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [ "${{ matrix.job.target }}" == "armv7l-linux-musleabihf" ]; then
+              echo "build=${{ inputs.build_armv7l }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [ "${{ matrix.job.target }}" == "riscv64-linux-musl" ]; then
+              echo "build=${{ inputs.build_riscv64 }}" >> $GITHUB_OUTPUT
+            fi
+
+            export BUILD_VERSION_V="${{ inputs.verison }}"
+          fi
+
+          export BUILD_VERSION="${BUILD_VERSION_V#v}"
+          echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
+          echo "image=${{ matrix.job.image }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        if: steps.build-check.outputs.build == 'true'
+        uses: actions/checkout@v4
+
+      - name: Get source code
+        if: steps.build-check.outputs.build == 'true'
+        run: |
+          export MLX_VERSION=${{ steps.build-check.outputs.version }}
+          export MLX_SRC_FILENAME="mlx-v${MLX_VERSION}.tar.gz"
+          curl -fSL "https://github.com/ml-explore/mlx/archive/refs/tags/v${MLX_VERSION}.tar.gz" -o "${MLX_SRC_FILENAME}"
+
+      - name: Pull docker image
+        if: steps.build-check.outputs.build == 'true'
+        run: |
+          sudo docker pull --platform="${{ matrix.job.platform }}" "${{ steps.build-check.outputs.image }}"
+          if [ "${{ matrix.job.arch }}" != "$(uname -m)" ]; then
+            sudo apt-get update
+            sudo apt-get install -y binfmt-support qemu-user-static
+          fi
+
+      - name: Compile
+        if: steps.build-check.outputs.build == 'true'
+        run: |
+          export MLX_VERSION=${{ steps.build-check.outputs.version }}
+          export ROOTDIR="$(pwd)"
+          rm -rf "${ROOTDIR}/mlx-${MLX_VERSION}" "${ROOTDIR}/artifact"
+          cp .github/script-to-build-musl.sh ./
+          cp .github/do-build-musl.sh ./
+          bash ./script-to-build-musl.sh "${MLX_VERSION}" "${{ matrix.job.debug }}" "${{ matrix.job.arch }}" "${{ steps.build-check.outputs.image }}" "${{ matrix.job.platform }}"
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        if: steps.build-check.outputs.build == 'true'
+        with:
+          subject-path: |
+            artifact/*.tar.gz
+            artifact/*.sha256
+
+      - name: Upload binaries
+        uses: softprops/action-gh-release@v2
+        if: steps.build-check.outputs.build == 'true'
+        with:
+          tag_name: v${{ steps.build-check.outputs.version }}
+          name: v${{ steps.build-check.outputs.version }}
+          files: |
+            artifact/*.tar.gz
+            artifact/*.sha256
