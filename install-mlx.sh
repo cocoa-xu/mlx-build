@@ -11,6 +11,8 @@ DOWNLOAD_ONLY="${MLX_DOWNLOAD_ONLY:-false}"
 DEBUG="${MLX_DEBUG:-false}"
 JIT="${MLX_JIT:-false}"
 DEPLOYMENT_TARGET="${MLX_DEPLOYMENT_TARGET:-14.0}"
+CUDA="${MLX_CUDA:-}"
+CUDNN="${MLX_CUDNN:-9}"
 TOKEN="${MLX_TOKEN:-}"
 
 log() { echo "[setup-mlx] $*" >&2; }
@@ -67,6 +69,7 @@ archive_name() {
   case "${triplet}" in
     *-apple-darwin) name="${name}-${DEPLOYMENT_TARGET}" ;;
   esac
+  [ -n "${CUDA}" ] && name="${name}-cuda${CUDA}-cudnn${CUDNN}"
   [ "${DEBUG}" = true ] && name="${name}-debug"
   case "${triplet}" in
     *-apple-darwin) [ "${JIT}" = true ] && name="${name}-jit" ;;

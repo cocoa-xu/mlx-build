@@ -24,6 +24,14 @@ inputs:
     description: 'macOS only: deployment target (14.0 = portable, 26.2 = NAX kernels)'
     required: false
     default: '14.0'
+  cuda:
+    description: 'CUDA major version for the CUDA variant (Linux glibc, e.g. "13"); empty = CPU build'
+    required: false
+    default: ''
+  cudnn:
+    description: 'cuDNN major version for the CUDA variant'
+    required: false
+    default: '9'
   install-dir:
     description: 'Directory to extract MLX into'
     required: false
@@ -77,6 +85,8 @@ runs:
         MLX_DEBUG: ${{ inputs.debug }}
         MLX_JIT: ${{ inputs.jit }}
         MLX_DEPLOYMENT_TARGET: ${{ inputs.deployment-target }}
+        MLX_CUDA: ${{ inputs.cuda }}
+        MLX_CUDNN: ${{ inputs.cudnn }}
         MLX_INSTALL_DIR: ${{ inputs.install-dir }}
         MLX_ADD_TO_PATH: ${{ inputs.add-to-path }}
         MLX_DOWNLOAD_ONLY: ${{ inputs.download-only }}
