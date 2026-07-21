@@ -8,9 +8,13 @@
 > 
 > **Please evaluate and use at your own risk.**
 
-## macOS artifacts
+## Artifacts
 
-Every upstream MLX release from `v0.31.0` onward is built into **8 macOS variants** — the cross product of three axes:
+Precompiled binaries are published on every release; the variants and file names differ by platform.
+
+### macOS
+
+Each release from `v0.31.0` onward ships **8 macOS variants** — the cross product of three axes:
 
 | axis | values | effect |
 |------|--------|--------|
@@ -19,8 +23,6 @@ Every upstream MLX release from `v0.31.0` onward is built into **8 macOS variant
 | deployment target | `14.0` / `26.2` | minimum macOS the binary runs on (see below) |
 
 All are `arm64-apple-darwin`, built on `macos-26` (Xcode 26).
-
-### Naming
 
 ```
 mlx-arm64-apple-darwin-<deployment-target>[-debug][-jit].tar.gz
@@ -40,3 +42,20 @@ The filename is keyed on the **deployment target**, not `MLX_METAL_VERSION`, bec
 NAX kernels are MLX's GEMM/attention paths built on Apple's `MetalPerformancePrimitives` (Metal 4 tensor ops); they need the macOS 26 SDK and only run on macOS 26.2+. MLX gates them behind `MLX_METAL_VERSION >= 400 AND MACOS_SDK_VERSION >= 26.2 AND CMAKE_OSX_DEPLOYMENT_TARGET >= 26.2` ([`kernels/CMakeLists.txt`](https://github.com/ml-explore/mlx/blob/v0.32.0/mlx/backend/metal/kernels/CMakeLists.txt#L158)). On our `macos-26` build host the SDK is always ≥ 26.2, so the deployment target alone flips NAX on or off.
 
 Use the `14.0` builds for broad compatibility; use `26.2` only if you target macOS 26.2+ and want NAX acceleration compiled in. (The `jit` variants additionally JIT-compile NAX at runtime on 26.2+ hardware, regardless of deployment target.)
+
+### Linux
+
+Each release ships **6 Linux (glibc) variants** — the cross product of two axes:
+
+| axis | values | effect |
+|------|--------|--------|
+| architecture | `x86_64` / `aarch64` / `riscv64` | target CPU (cross-built in Docker + QEMU) |
+| build type | release / `debug` | `debug` = `Debug` CMake build |
+
+```
+mlx-<arch>-linux-gnu[-debug].tar.gz
+```
+
+e.g. `mlx-x86_64-linux-gnu.tar.gz`, `mlx-aarch64-linux-gnu-debug.tar.gz`, `mlx-riscv64-linux-gnu.tar.gz`.
+
+Built against a glibc baseline: `x86_64` and `aarch64` on Ubuntu 20.04 (glibc 2.31), `riscv64` on Ubuntu 24.04 (glibc 2.39) — each binary needs at least that glibc at runtime.
