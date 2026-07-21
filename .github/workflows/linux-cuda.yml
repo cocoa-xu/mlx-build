@@ -58,7 +58,7 @@ jobs:
             cudnn_url: "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-9.23.0.39_cuda13-archive.tar.xz"
           - target: "aarch64-linux-gnu"
             arch: "aarch64"
-            runs-on: ubicloud-standard-8-arm
+            runs-on: ubuntu-24.04-arm
             container: "nvidia/cuda:13.0.1-devel-ubuntu22.04"
             cuda_id: "13"
             cudnn_id: "9"
@@ -91,11 +91,6 @@ jobs:
 
       - name: Compile
         if: steps.build-check.outputs.build == 'true'
-        env:
-          # The quantized-matmul CUDA kernels are memory-heavy per nvcc, and
-          # each is compiled for every arch — full -j$(nproc) OOM-kills bigger
-          # runners. Cap concurrency to keep peak memory in check.
-          JOBS: "4"
         run: |
           export ROOTDIR="$(pwd)"
           bash .github/do-build-cuda.sh \
