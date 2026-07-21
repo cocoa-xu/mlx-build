@@ -60,6 +60,16 @@ e.g. `mlx-x86_64-linux-gnu.tar.gz`, `mlx-aarch64-linux-musl-debug.tar.gz`, `mlx-
 
 All are CPU builds with the full feature set — BLAS/LAPACK via OpenBLAS, GGUF + safetensors, distributed (ring + MPI). glibc `x86_64`/`aarch64` target a ~2.14 floor (Ubuntu 20.04 + gcc-13); the rest build on Ubuntu 24.04 / Alpine. Each binary dynamically links OpenBLAS + libgfortran + libstdc++, so the target must provide them (`apt install libopenblas0 libgfortran5` or `apk add openblas libgfortran libstdc++`).
 
+### Linux (CUDA)
+
+For NVIDIA GPUs there is a separate CUDA variant (glibc, `x86_64` + `aarch64`):
+
+```
+mlx-<arch>-linux-gnu-cuda13-cudnn9[-debug].tar.gz
+```
+
+Built against **CUDA 13.0 + cuDNN 9** (`MLX_BUILD_CUDA=ON` — adds cuBLAS/cuFFT/cuDNN/NCCL) for compute capabilities 8.0 / 9.0 / 10.0 / 12.0 (+ PTX for forward compatibility). It needs an NVIDIA GPU with the CUDA 13 runtime + cuDNN 9 + driver at runtime, so it is a separate, non-portable variant — not a drop-in replacement for the CPU builds.
+
 ## Usage
 
 Install a release in a workflow with the bundled action — it auto-detects the target triplet:
@@ -71,6 +81,7 @@ Install a release in a workflow with the bundled action — it auto-detects the 
     # debug: true                # debug variant
     # deployment-target: "26.2"  # macOS: NAX-enabled build (default 14.0)
     # jit: true                  # macOS: JIT Metal variant
+    # cuda: "13"                 # Linux: NVIDIA CUDA 13 + cuDNN 9 variant
 ```
 
 It exports `MLX_DIR` / `CMAKE_PREFIX_PATH` (for `find_package(MLX)`) and `LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH`, and sets `install-dir`, `lib-dir`, `include-dir`, and the resolved `mlx-version` / `triplet` as step outputs.
