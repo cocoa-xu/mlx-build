@@ -10,6 +10,22 @@ on:
         description: 'MLX_CUDA_ARCHITECTURES (CMake CUDA arch list)'
         required: false
         default: '80-real;90-real;100-real;120-real;80-virtual'
+      build_x86_64:
+        description: 'Build x86_64'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
+      build_aarch64:
+        description: 'Build aarch64'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
   push:
     tags:
       - 'v*'
@@ -42,7 +58,7 @@ jobs:
             cudnn_url: "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-9.23.0.39_cuda13-archive.tar.xz"
           - target: "aarch64-linux-gnu"
             arch: "aarch64"
-            runs-on: ubuntu-24.04-arm
+            runs-on: ubicloud-standard-8-arm
             container: "nvidia/cuda:13.0.1-devel-ubuntu22.04"
             cuda_id: "13"
             cudnn_id: "9"
@@ -55,17 +71,26 @@ jobs:
         id: build-check
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
+            echo "build=true" >> $GITHUB_OUTPUT
             export BUILD_VERSION_V="v${GITHUB_REF##*/v}"
           else
+            if [ "${{ matrix.job.arch }}" = "x86_64" ]; then
+              echo "build=${{ inputs.build_x86_64 }}" >> $GITHUB_OUTPUT
+            fi
+            if [ "${{ matrix.job.arch }}" = "aarch64" ]; then
+              echo "build=${{ inputs.build_aarch64 }}" >> $GITHUB_OUTPUT
+            fi
             export BUILD_VERSION_V="${{ inputs.verison }}"
           fi
           export BUILD_VERSION="${BUILD_VERSION_V#v}"
           echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Checkout
+        if: steps.build-check.outputs.build == 'true'
         uses: actions/checkout@v4
 
       - name: Compile
+        if: steps.build-check.outputs.build == 'true'
         run: |
           export ROOTDIR="$(pwd)"
           bash .github/do-build-cuda.sh \
@@ -75,6 +100,7 @@ jobs:
             "${{ inputs.cuda_archs }}"
 
       - name: Attest
+        if: steps.build-check.outputs.build == 'true'
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: |
@@ -82,6 +108,7 @@ jobs:
             artifact/*.sha256
 
       - name: Upload binaries
+        if: steps.build-check.outputs.build == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.build-check.outputs.version }}
