@@ -17,8 +17,17 @@ export DEBIAN_FRONTEND=noninteractive
 
 export SUDO="$(which sudo)"
 ${SUDO} apt-get update
-${SUDO} apt-get install -y gcc-10 g++-10 gfortran-10 curl make cmake automake autoconf pkg-config git patchelf libopenblas-dev liblapack-dev liblapacke-dev
-export CC=gcc-10 CXX=g++-10 FC=gfortran-10
+# gcc-13: MLX 0.32's CPU JIT uses __builtin_cpu_supports("f16c"), which gcc-10
+# rejects on x86_64. On Ubuntu 20.04 gcc-13 comes from the toolchain PPA (so we
+# keep the low glibc floor); on 24.04 it's already in the default repos.
+. /etc/os-release
+if [ "${VERSION_ID}" = "20.04" ]; then
+  ${SUDO} apt-get install -y software-properties-common
+  ${SUDO} add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  ${SUDO} apt-get update
+fi
+${SUDO} apt-get install -y gcc-13 g++-13 gfortran-13 curl make cmake automake autoconf pkg-config git patchelf libopenblas-dev liblapack-dev liblapacke-dev
+export CC=gcc-13 CXX=g++-13 FC=gfortran-13
 
 cd "${ROOTDIR}"
 
@@ -54,7 +63,9 @@ cmake -B build \
   -D MLX_BUILD_EXAMPLES=OFF \
   -D MLX_BUILD_BENCHMARKS=OFF \
   -D MLX_BUILD_PYTHON_BINDINGS=OFF \
-  -D MLX_BUILD_BLAS_FROM_SOURCE=ON \
+  -D MLX_BUILD_CPU=ON \
+  -D MLX_BUILD_GGUF=ON \
+  -D MLX_BUILD_SAFETENSORS=ON \
   -D BUILD_SHARED_LIBS=ON \
   .
 cmake --build build --config "${CMAKE_BUILD_TYPE}" -j"$(nproc)"
