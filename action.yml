@@ -1,0 +1,84 @@
+name: 'Setup MLX'
+description: 'Download and set up a precompiled MLX release from cocoa-xu/mlx-build'
+branding:
+  icon: 'cpu'
+  color: 'blue'
+
+inputs:
+  mlx-version:
+    description: 'MLX version or requirement, e.g. "0.32.0", "~> 0.32", ">= 0.31.0"'
+    required: true
+  triplet:
+    description: 'Override the auto-detected target triplet'
+    required: false
+    default: ''
+  debug:
+    description: 'Use the debug build variant'
+    required: false
+    default: 'false'
+  jit:
+    description: 'macOS only: use the JIT (runtime Metal compilation) variant'
+    required: false
+    default: 'false'
+  deployment-target:
+    description: 'macOS only: deployment target (14.0 = portable, 26.2 = NAX kernels)'
+    required: false
+    default: '14.0'
+  install-dir:
+    description: 'Directory to extract MLX into'
+    required: false
+    default: '.mlx'
+  add-to-path:
+    description: 'Append <install-dir>/bin to PATH'
+    required: false
+    default: 'true'
+  download-only:
+    description: 'Only download the archive; do not extract or set env'
+    required: false
+    default: 'false'
+  repository:
+    description: 'GitHub repository hosting the MLX releases'
+    required: false
+    default: 'cocoa-xu/mlx-build'
+  token:
+    description: 'GitHub token used for the releases API'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  mlx-version:
+    description: 'Resolved MLX version'
+    value: ${{ steps.install.outputs.mlx-version }}
+  triplet:
+    description: 'Target triplet used'
+    value: ${{ steps.install.outputs.triplet }}
+  install-dir:
+    description: 'Absolute install directory (usable as a CMake prefix)'
+    value: ${{ steps.install.outputs.install-dir }}
+  lib-dir:
+    description: 'Library directory'
+    value: ${{ steps.install.outputs.lib-dir }}
+  include-dir:
+    description: 'Include directory'
+    value: ${{ steps.install.outputs.include-dir }}
+  archive-path:
+    description: 'Downloaded archive path (download-only mode)'
+    value: ${{ steps.install.outputs.archive-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: install
+      shell: bash
+      run: '"${{ github.action_path }}/install-mlx.sh"'
+      env:
+        MLX_VERSION: ${{ inputs.mlx-version }}
+        MLX_TRIPLET: ${{ inputs.triplet }}
+        MLX_DEBUG: ${{ inputs.debug }}
+        MLX_JIT: ${{ inputs.jit }}
+        MLX_DEPLOYMENT_TARGET: ${{ inputs.deployment-target }}
+        MLX_INSTALL_DIR: ${{ inputs.install-dir }}
+        MLX_ADD_TO_PATH: ${{ inputs.add-to-path }}
+        MLX_DOWNLOAD_ONLY: ${{ inputs.download-only }}
+        MLX_REPOSITORY: ${{ inputs.repository }}
+        MLX_TOKEN: ${{ inputs.token }}
