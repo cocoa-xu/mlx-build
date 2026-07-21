@@ -1,0 +1,84 @@
+name: linux-cuda
+
+on:
+  workflow_dispatch:
+    inputs:
+      verison:
+        description: 'MLX Version'
+        required: true
+      cuda_archs:
+        description: 'MLX_CUDA_ARCHITECTURES (CMake CUDA arch list)'
+        required: false
+        default: '80-real;90-real;100-real;120-real;80-virtual'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  linux-cuda:
+    runs-on: ${{ matrix.job.runs-on }}
+    container: ${{ matrix.job.container }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.job.target }}-cuda${{ matrix.job.cuda_id }}-${{ inputs.verison }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          # CUDA 13 has no musl support and MLX needs the GPU compiler + cuDNN,
+          # so this is glibc x86_64 only. cuDNN comes from NVIDIA's public
+          # redist (no login). aarch64/sbsa can be added the same way.
+          - target: "x86_64-linux-gnu"
+            arch: "x86_64"
+            runs-on: ubuntu-latest
+            container: "nvidia/cuda:13.0.1-devel-ubuntu22.04"
+            cuda_id: "13"
+            cudnn_id: "9"
+            cudnn_url: "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-9.23.0.39_cuda13-archive.tar.xz"
+
+    name: ${{ matrix.job.target }}-cuda${{ matrix.job.cuda_id }}-cudnn${{ matrix.job.cudnn_id }}
+
+    steps:
+      - name: Build Check
+        id: build-check
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            export BUILD_VERSION_V="v${GITHUB_REF##*/v}"
+          else
+            export BUILD_VERSION_V="${{ inputs.verison }}"
+          fi
+          export BUILD_VERSION="${BUILD_VERSION_V#v}"
+          echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile
+        run: |
+          export ROOTDIR="$(pwd)"
+          bash .github/do-build-cuda.sh \
+            "${{ steps.build-check.outputs.version }}" "OFF" \
+            "${{ matrix.job.arch }}" "${{ matrix.job.cuda_id }}" "${{ matrix.job.cudnn_id }}" \
+            "${{ matrix.job.cudnn_url }}" "${ROOTDIR}" \
+            "${{ inputs.cuda_archs }}"
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            artifact/*.tar.gz
+            artifact/*.sha256
+
+      - name: Upload binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.build-check.outputs.version }}
+          name: v${{ steps.build-check.outputs.version }}
+          files: |
+            artifact/*.tar.gz
+            artifact/*.sha256
